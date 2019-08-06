@@ -79,10 +79,12 @@ def del_list():
 
 def send_sms():
     liste = load_list()
+    if not liste:
+        return "La liste de courses est vide"
     config = read_configuration_file()
     smsData = {
-        "user": config['secret'].get('identifiantFree'),
-        "pass": config['secret'].get('cleIdentification'),
+        "user": config['secret']['identifiant_free'],
+        "pass": config['secret']['cle_identification'],
         "msg": "Liste de courses: {}".format(", ".join(liste))
     }
     response = post("https://smsapi.free-mobile.fr/sendmsg", json=smsData)

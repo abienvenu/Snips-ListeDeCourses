@@ -79,8 +79,8 @@ def send_sms():
     liste = load_list()
     config = read_configuration_file()
     smsData = {
-        "user": config.get('user'),
-        "pass": config.get('pass'),
+        "user": config['secret'].get('user'),
+        "pass": config['secret'].get('pass'),
         "msg": "Liste de courses: {}".format(", ".join(liste))
     }
     post("https://smsapi.free-mobile.fr/sendmsg", json=smsData)

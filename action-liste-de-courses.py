@@ -66,6 +66,8 @@ def del_item(item):
 
 def get_list():
     liste = load_list()
+    if not liste:
+        return "La liste de courses est vide"
     return "Voici ce qu'il y a sur la liste de courses: {}".format(
         ", ".join(liste))
 
@@ -79,12 +81,24 @@ def send_sms():
     liste = load_list()
     config = read_configuration_file()
     smsData = {
-        "user": config['secret'].get('user'),
-        "pass": config['secret'].get('pass'),
+        "user": config['secret'].get('identifiantFree'),
+        "pass": config['secret'].get('cleIdentification'),
         "msg": "Liste de courses: {}".format(", ".join(liste))
     }
-    post("https://smsapi.free-mobile.fr/sendmsg", json=smsData)
-    return "J'ai envoyé la liste de courses par SMS"
+    response = post("https://smsapi.free-mobile.fr/sendmsg", json=smsData)
+    code = response.status_code
+    if code == 200:
+        return "J'ai envoyé la liste de courses par SMS"
+    elif code == 402:
+        return "Désolé, je ne peux pas envoyer trop de SMS"
+    elif code == 403:
+        return "Le service n'est pas activé sur l'espace abonné, "
+        "ou le login ou la clé sont incorrects"
+    elif code == 500:
+        return "Désolé, le service SMS de Free est dans les choux"
+    else:
+        return "Désolé, l'envoi du SMS a échoué avec l'erreur {}".format(
+            response.status_code)
 
 
 def intent_callback(hermes, intent_message):

@@ -87,7 +87,11 @@ def send_sms():
         "pass": config['secret']['cle_identification'],
         "msg": "Liste de courses: {}".format(", ".join(liste))
     }
-    response = post("https://smsapi.free-mobile.fr/sendmsg", json=smsData)
+    response = post(
+        "https://smsapi.free-mobile.fr/sendmsg",
+        json=smsData,
+        timeout=2
+    )
     code = response.status_code
     if code == 200:
         return "J'ai envoyé la liste de courses par SMS"

@@ -4,7 +4,7 @@
 import json
 import configparser
 import io
-from requests import post
+import requests
 from hermes_python.hermes import Hermes
 from hermes_python.ffi.utils import MqttOptions
 
@@ -87,11 +87,15 @@ def send_sms():
         "pass": config['secret']['cle_identification'],
         "msg": "Liste de courses: {}".format(", ".join(liste))
     }
-    response = post(
-        "https://smsapi.free-mobile.fr/sendmsg",
-        json=smsData,
-        timeout=2
-    )
+    try:
+        response = requests.get(
+            "https://smsapi.free-mobile.fr/sendmsg",
+            params=smsData,
+            timeout=2
+        )
+    except requests.exceptions.Timeout:
+        return "Le service SMS de free ne répond pas"
+
     code = response.status_code
     if code == 200:
         return "J'ai envoyé la liste de courses par SMS"

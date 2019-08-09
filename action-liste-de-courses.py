@@ -8,6 +8,8 @@ import requests
 from hermes_python.hermes import Hermes
 from hermes_python.ffi.utils import MqttOptions
 
+state = {'confirmationPurge': False}
+
 
 class SnipsConfigParser(configparser.SafeConfigParser):
     def to_dict(self):
@@ -116,14 +118,27 @@ def intent_callback(hermes, intent_message):
     result = None
     if intent_name == "addItem":
         result = add_item(intent_message.slots.Item.first().value)
-    if intent_name == "delItem":
+    elif intent_name == "delItem":
         result = del_item(intent_message.slots.Item.first().value)
-    if intent_name == "getList":
+    elif intent_name == "getList":
         result = get_list()
-    if intent_name == "delList":
-        result = del_list()
-    if intent_name == "sendSMS":
+    elif intent_name == "sendSMS":
         result = send_sms()
+
+    if state['confirmationPurge']:
+        state['confirmationPurge'] = False
+        if intent_name == "confirmation":
+            result = del_list()
+        elif intent_name == "annulation":
+            result = "Pardon, je conserve la liste de courses"
+
+    if intent_name == "delList":
+        state['confirmationPurge'] = True
+        hermes.publish_continue_session(
+            intent_message.session_id,
+            "Voulez-vous vraiment purger la liste de courses ?",
+            ["abienvenu:confirmation", "abienvenu:annulation"]
+        )
 
     if result is not None:
         hermes.publish_end_session(intent_message.session_id, result)

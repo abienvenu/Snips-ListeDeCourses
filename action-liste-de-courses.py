@@ -126,7 +126,7 @@ def send_email():
     if not config['secret']['smtp']:
         return "Aucun serveur SMTP n'est configuré"
     if not config['secret']['email']:
-        return "Votre adresse email de destination n'est pas configurée"
+        return "Votre adresse mél de destination n'est pas configurée"
     server = smtplib.SMTP()
     server.connect(config['secret']['smtp'])
     message = """\
@@ -135,6 +135,7 @@ To: {}\r\n\
 Subject: Liste de courses\r\n\
 \r\n\
 Liste de courses:\r\n\
+{}
 """.format(config['secret']['email'], "\r\n".join(liste))
     try:
         server.sendmail(
@@ -143,9 +144,9 @@ Liste de courses:\r\n\
             message
         )
     except smtplib.SMTPException:
-        return "L'envoi de l'email a échoué"
+        return "L'envoi du mél a échoué"
     server.quit()
-    return "La liste de courses vous a été envoyée par email"
+    return "La liste de courses vous a été envoyée par mél"
 
 
 def intent_callback(hermes, intent_message):

@@ -5,6 +5,7 @@ import json
 import configparser
 import io
 import requests
+import smtplib
 from hermes_python.hermes import Hermes
 from hermes_python.ffi.utils import MqttOptions
 
@@ -81,9 +82,13 @@ def del_list():
 
 def send_sms():
     liste = load_list()
+    config = read_configuration_file()
     if not liste:
         return "La liste de courses est vide"
-    config = read_configuration_file()
+    if not config['secret']['identifiant_free']:
+        return "Votre identifiant Free n'est pas configuré"
+    if not config['secret']['cle_identification']:
+        return "Votre clé API Free n'est pas configurée"
     smsData = {
         "user": config['secret']['identifiant_free'],
         "pass": config['secret']['cle_identification'],
@@ -113,6 +118,36 @@ def send_sms():
             response.status_code)
 
 
+def send_email():
+    liste = load_list()
+    config = read_configuration_file()
+    if not liste:
+        return "La liste de courses est vide"
+    if not config['secret']['smtp']:
+        return "Aucun serveur SMTP n'est configuré"
+    if not config['secret']['email']:
+        return "Votre adresse email de destination n'est pas configurée"
+    server = smtplib.SMTP()
+    server.connect(config['secret']['smtp'])
+    message = """\
+From: "Votre assistant SNIPS" <snips@listedecourse.com>\r\n\
+To: {}\r\n\
+Subject: Liste de courses\r\n\
+\r\n\
+Liste de courses:\r\n\
+""".format(config['secret']['email'], "\r\n".join(liste))
+    try:
+        server.sendmail(
+            "snips@listedecourse.com",
+            config['secret']['email'],
+            message
+        )
+    except smtplib.SMTPException:
+        return "L'envoi de l'email a échoué"
+    server.quit()
+    return "La liste de courses vous a été envoyée par email"
+
+
 def intent_callback(hermes, intent_message):
     intent_name = intent_message.intent.intent_name.replace("abienvenu:", "")
     result = None
@@ -124,6 +159,8 @@ def intent_callback(hermes, intent_message):
         result = get_list()
     elif intent_name == "sendSMS":
         result = send_sms()
+    elif intent_name == "sendEmail":
+        result = send_email()
 
     if state['confirmationPurge']:
         state['confirmationPurge'] = False

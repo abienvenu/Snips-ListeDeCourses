@@ -149,6 +149,37 @@ Liste de courses:\r\n\
     return "La liste de courses vous a été envoyée par mél"
 
 
+def send_telegram():
+    liste = load_list()
+    config = read_configuration_file()
+    if not liste:
+        return "La liste de courses est vide"
+    if not config['secret']['token_telegram']:
+        return "Votre token Telegram n'est pas configuré"
+    if not config['secret']['chat_id']:
+        return "Votre chatte id Telegram n'est pas configuré"
+    telegramData = {
+        "my_token": config['secret']['token'],
+        "my_chat_id": config['secret']['chat_id'],
+        "msg": "Liste de courses: {}".format(", ".join(liste))
+    }
+    try:
+        response = requests.get(
+            ("https://api.telegram.org/bot{}/"
+                "sendMessage?chat_id={}&text={}").format(
+                    telegramData.get("my_token"),
+                    telegramData.get("my_chat_id"),
+                    telegramData.get("msg")
+                )
+        )
+    except requests.exceptions.Timeout:
+        return "Telegram ne répond pas"
+    if b"\"ok\":true" in response.content:
+        return "J'ai envoyé la liste de courses par Telegram"
+    else:
+        return "L'envoi par Telegram a échoué"
+
+
 def intent_callback(hermes, intent_message):
     intent_name = intent_message.intent.intent_name.replace("abienvenu:", "")
     result = None
@@ -162,6 +193,8 @@ def intent_callback(hermes, intent_message):
         result = send_sms()
     elif intent_name == "sendEmail":
         result = send_email()
+    elif intent_name == "sendTelegram":
+        result = send_telegram()
 
     if state['confirmationPurge']:
         state['confirmationPurge'] = False
